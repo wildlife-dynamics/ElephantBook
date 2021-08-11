@@ -1,0 +1,16 @@
+name: elephantbook
+channels:
+  - defaults
+dependencies:
+  - pip=21.1.2
+  - python=3.8.2
+  - pip:
+    - django==3.2.4
+    - django-auditlog==1.0a1
+    - django-extensions==3.1.0
+    - django-multiselectfield==0.1.12
+    - numpy==1.18.5
+    - pandas==1.2.4
+    - pillow==8.2.0
+    - requests==2.25.1
+    - tqdm==4.62.0

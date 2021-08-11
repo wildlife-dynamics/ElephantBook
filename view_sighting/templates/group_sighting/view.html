@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Group Sighting {{ group_sighting.earthranger_id }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'group sighting list' %}">Group Sighting</a> {{ group_sighting.id }}:
+<ul>
+    <li>EarthRanger Serial: {{ group_sighting.earthranger_serial }}</li>
+    <li>EarthRanger ID: <a href="{{ ER_MAIN }}event/{{ group_sighting.earthranger_id }}">{{ group_sighting.earthranger_id }}</a><br/>
+        <a href="{{ ER_ADMIN }}event/{{ group_sighting.earthranger_id }}">ER Admin</a></li>
+    <li>Time: {{ group_sighting.datetime }} </li>
+    <li>Lat, Lon: ({{ group_sighting.lat }}, {{ group_sighting.lon }}) </li>
+    <li> Sightings:
+        <ol>
+            {% for individual_sighting in group_sighting.individual_sighting_set.all %}
+                <li> ID: {% if individual_sighting.individual %}
+                            <a href="{% url 'individual view' individual_sighting.individual.id %}"> {{ individual_sighting.individual.name }} </a>
+                         {% else %}
+                            Unknown
+                         {% endif %}
+                    </br>
+                    Individual Sighting: <a href="{% url 'individual sighting view' individual_sighting.id %}"> {{ individual_sighting.id }} </a>
+                </li>
+            {% endfor %}
+        </ol>
+    </li>
+    <li> 
+        <form action="{% url 'group sighting edit' group_sighting.earthranger_serial %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            Add images: {{ form.images }}
+            <input type="submit" value="Upload Selected Images" />
+            <hr>
+            {% include "../annotator/view.html" with images=images boxes=boxes categories=categories annotate=True %}
+            <input type="hidden" name="boxes" id="boxes" value="">
+            <hr>
+            Notes:
+            <br>
+            {{ notes_form.notes }}
+            <hr>
+            <input type="submit" value="Save" />
+        </form>
+    </li>
+</ul>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Search{% endblock %}
+
+{% block content %}
+Fill out attributes then search.
+<form action="{% url 'search' %}" method="get">
+{{ form }}
+<input type="submit" value="Submit">
+</form>
+
+<ol>
+    {% for score, code in results %}
+    <li>{{ code }}<br/>
+        Individual Sighting: <a href="{% url 'individual sighting view' code.individual_sighting.id %}">{{ code.individual_sighting.id }}</a> <br/>
+        Score: {{ score }}<br/>
+        Identity: {% if code.individual_sighting.individual %}
+        <a href="{% url 'individual view' code.individual_sighting.individual.id %}">{{ code.individual_sighting.individual.name }}</a>
+                  {% else %}
+                    Unknown
+                  {% endif %}
+    </li>
+    {% empty %}
+    No matching Seek_Identity.
+    {% endfor %}
+</ol>
+
+<script>
+$('form').submit(function(){
+    $(':input', this).each(function(){
+        this.disabled = !($(this).val());
+    });
+});
+</script>
+{% endblock %}
