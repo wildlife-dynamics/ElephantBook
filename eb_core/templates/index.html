@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<ul>
+    <li><a href="{% url 'add earthranger' %}">Add Group Sighting From EarthRanger</a></li>
+    <li><a href="{% url 'group sighting list' %}">View Group Sightings</a></li>
+    <li><a href="{% url 'social sighting list' %}">View Social Sightings</a></li>
+    <li><a href="{% url 'individual sighting list' %}">View Individual Sightings</a>
+        <ul>
+            <li><a href="{% url 'search' %}">Individual Sighting Search Using SEEK</a></li>
+            <li><a href="{% url 'individual sighting queue' %}">Individual Sighting Queue</a></li>
+{% if user.expert %}
+            <li><a href="{% url 'individual sighting expert queue' %}">Individual Sighting Expert Review Queue</a></li>
+{% else %}
+            <li>You are not registered as an expert in SEEK. Please contact Dr. Jake Wall if you believe this is in error.</li>
+{% endif %}
+            <li><a href="{% url 'individual sighting unidentified' %}">Unidentified Individual Sightings</a></li>
+        </ul>
+    </li>
+    <li><a href="{% url 'individual list' %}">View Individuals</a></li>
+    <li><a href="{% url 'stats' %}">View Data Statistics</a></li>
+</ul>
+{% endblock %}

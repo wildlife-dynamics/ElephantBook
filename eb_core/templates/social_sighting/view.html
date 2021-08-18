@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Social Sighting {{ social_sighting.id }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'social sighting list' %}">Social Sighting</a> {{ social_sighting.id }}:
+<ul>
+    <li>Group Sighting: <a href="{% url 'group sighting view' social_sighting.group_sighting.earthranger_serial %}"> {{ social_sighting.group_sighting.earthranger_serial }} </a></li>
+    <li>EarthRanger ID: <a href="{{ ER_MAIN }}event/{{ social_sighting.group_sighting.earthranger_id }}">{{ social_sighting.group_sighting.earthranger_id }}</a><br/>
+        <a href="{{ ER_ADMIN }}event/{{ individual_sighting.group_sighting.earthranger_id }}">ER Admin</a>  </li>
+    <li>Photographed/unphotographed elephants: {{ social_sighting.individual_sightings.count }}/{{ social_sighting.unphotographed_individuals.count }}</li>
+    <li>Individual Sightings:
+        {% if social_sighting.individual_sightings.count %}
+        <ol>
+            {% for individual_sighting in social_sighting.individual_sightings.all %}
+                <li> ID: {% if individual_sighting.individual %}
+                    <a href="{% url 'individual view' individual_sighting.individual.id %}"> {{ individual_sighting.individual }} </a>
+                    {% else %}
+                        Unknown
+                    {% endif %}
+                    <br>
+                    Individual Sighting: <a href="{% url 'individual sighting view' individual_sighting.id %}"> {{ individual_sighting }} </a>
+                </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+            None
+        {% endif %}
+    </li>
+    <li>Unphotographed Individuals:
+        {% if social_sighting.unphotographed_individuals.count %}
+            <ol>
+                {% for individual in social_sighting.unphotographed_individuals.all %}
+                    <li> ID: <a href="{% url 'individual view' individual.id %}"> {{ individual }} </a></li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            None
+        {% endif %}
+    </li>
+    <li>Time: {{ social_sighting.group_sighting.datetime }} </li>
+    <li>Lat, Lon: ({{ social_sighting.group_sighting.lat }}, {{ social_sighting.group_sighting.lon }}) </li>
+    <li>
+        {% include "../annotator/view.html" with images=images boxes=boxes categories=categories %}
+    </li>
+    <li>
+        <form action="{% url 'social sighting edit' social_sighting.id %}" method="post">
+            {% csrf_token %}
+            Notes:
+            <br>
+            {{ notes_form.notes }}
+            <hr>
+            <input type="submit" value="Save" />
+        </form>
+    </li>
+</ul>
+
+{% endblock %}

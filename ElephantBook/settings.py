@@ -29,7 +29,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'view_sighting.apps.ViewSightingConfig',
+    'eb_core.apps.EBCoreConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -126,7 +126,7 @@ MEDIA_URL = '/media/'
 
 LOGIN_REDIRECT_URL = '/'
 
-AUTH_USER_MODEL = 'view_sighting.EBUser'
+AUTH_USER_MODEL = 'eb_core.EBUser'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 

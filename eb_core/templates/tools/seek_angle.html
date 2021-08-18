@@ -1,0 +1,35 @@
+{% load static %}
+<html>
+<head>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/godswearhats/jquery-ui-rotatable@1.1/jquery.ui.rotatable.css">
+    <script src="https://cdn.jsdelivr.net/gh/godswearhats/jquery-ui-rotatable@1.1/jquery.ui.rotatable.min.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $(
+                '<div id="seek_angle_drag" style="display: none; height: 0; width: 0; z-index: 1000;"><div id="seek_angle_rotate"></div></div>'
+            ).insertAfter("#navbar-main");
+            $("#seek_angle_rotate").rotatable({handleOffset: {left: 171.5}, rotationCenterOffset: {top: 80, left: 171.5}});
+            $("#seek_angle_drag").draggable();
+        });
+    </script>
+
+    <style>
+        .ui-wrapper {
+            overflow: visible!important;
+        }
+        #seek_angle_rotate {
+            display: inline-block;
+            height: 290px;
+            width: 343px;
+            background-size:100% 100%;
+            background-image: url("{% static 'seek_angle.png' %}");
+        }
+    </style>
+</head>
+<body>
+    <button onclick="$('#seek_angle_drag').toggle()">SEEK Angle</button>
+</body>
+</html>

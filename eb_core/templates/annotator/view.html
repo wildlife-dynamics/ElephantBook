@@ -1,0 +1,279 @@
+{% load static %}
+
+<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#photoGallery" aria-expanded="false" aria-controls="collapseExample">
+    Expand Photo Gallery
+</button>
+<div class="collapse" id="photoGallery">
+    <nav>
+        <div class="nav nav-tabs" id="nav-tab" role="tablist">
+        {% for k, images in thumbnails.items %}
+            {% if forloop.first %}
+                <a class="nav-item nav-link {{ forloop.first|yesno:'active,' }}" id="gallery-0-tab" data-toggle="tab" href="#gallery-0" role="tab" aria-controls="nav-home" aria-selected="true">{{ k }} ({{ images|length }})</a>
+            {% else %}
+                <a class="nav-item nav-link" id="gallery-{{ forloop.counter0 }}-tab" data-toggle="tab" href="#gallery-{{ forloop.counter0 }}" role="tab" aria-controls="nav-home" aria-selected="true">{{ k }} ({{ images|length }})</a>
+            {% endif %}
+        {% endfor %}
+        </div>
+    </nav>
+    <div class="tab-content" id="nav-tabContent">
+        {% for _, images in thumbnails.items %}
+            <div class="tab-pane fade" id="gallery-0" role="tabpanel" aria-labelledby="gallery-0-tab">
+            {% for image_id, image in images.items %}
+                <img src="{{ image }}" style="width: 100px" onclick="currentImageIndex={{ image_id }}; annotateImage(currentImageIndex);">
+            {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if annotate %}
+<label><input id="sideViewerCheck" type="checkbox" onclick="$('#sideViewer').toggle( this.checked ); " autocomplete="off">Show Side Viewer</label>
+<button type="button" onclick="images_data.forEach(image => {new Image().src = image.url});">Preload All Images</button>
+{% endif %}
+<div class="row">
+{% if annotate %}
+    <div class="col-4" id="sideViewer" style="display: none;">
+        <h4 id="viewCurrentImageProgress">Image -1 / -1</h4>
+        <button id="viewPreviousImageButton" type="button">Previous</button>
+        <button id="viewNextImageButton" type="button">Next</button>
+        <div id="viewAnnotationHolder"></div>
+    </div>
+{% endif %}
+    <div class="col">          
+        <h4 id="currentImageProgress">Image -1 / -1</h4>
+        <button id="previousImageButton" type="button">Previous</button>
+        <button id="nextImageButton" type="button">Next</button>
+{% if annotate %}
+        <button id="addElephant" type="button">Add Elephant to List of Identities</button>
+{% endif %}
+        <div id="annotationHolder"></div>
+    </div>
+</div>
+
+<style>
+    .leaflet-image-holder{
+        height: 32rem !important;
+        width: 48rem !important;
+    }
+
+    #viewAnnotationHolder .leaflet-image-holder{
+        height: 24rem !important;
+        width: 36rem !important;
+    }
+    
+    .annotation-instance-category-name{
+        font-size: xx-small;
+    }
+
+    .annotation-instance-supercategory-name{
+        font-size: xx-small;
+    }
+</style>
+
+<!-- Leaflet core CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+
+<!-- Leaflet Draw CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.3/leaflet.draw.css"/>
+
+<!-- Load React -->
+<script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+
+<!-- Our App javascript file -->
+<script src="{% static 'leaflet.annotation.js' %}"></script>
+
+<script type="text/javascript">
+    let annotatorRendered = null;
+    let currentImageIndex = 0;
+
+    let viewAnnotatorRendered = null;
+    let viewCurrentImageIndex = 0;
+
+    var images_data = {{ images|safe }};
+    var boxes = {{ boxes|safe }};
+
+    var categories = {{ categories|safe }};
+    var max_category_id = categories.length == 0 ? 0 : categories.reduce((a,b)=>a.id>b.id?a:b).id;
+
+    function annotateImage(imageIndex){
+        let image_info = images_data[imageIndex];
+        let existing_annotations = boxes[image_info.id];
+
+        if(annotatorRendered != null){
+            ReactDOM.unmountComponentAtNode(document.getElementById("annotationHolder"));
+            annotatorRendered = null;
+        }
+
+        $("#currentImageProgress").text('Image ' + (imageIndex + 1) + ' / ' + images_data.length);
+
+        let imageEl = new Image();
+        imageEl.onload = function(){
+            let annotator = React.createElement(document.LeafletAnnotation, {
+                imageElement : imageEl,
+                image : image_info,
+                annotations : existing_annotations,
+                categories : categories,
+                options : {
+{% if annotate %}
+                    enableEditingImmediately : true,
+{% else %}
+                    enableBoxEdit : false,
+{% endif %} 
+                    map : {
+                        attributionControl : false,
+                        zoomControl : false,
+                        boxZoom : true,
+                        doubleClickZoom : true,
+                        keyboard : true,
+                        scrollWheelZoom : true
+                    },
+                    newInstance: {
+                        annotateCategory: true,
+                        annotateSupercategory: false,
+                        annotationType: 'box'
+                    },
+                    duplicateInstance : {
+                        enable : false
+                    },
+                    showCategory : true,
+                    showSupercategory: true,
+                    showIsCrowdCheckbox: true,
+                    renderBoxes : true,
+                    allowCategoryEdit : false
+                }
+            }, null);
+            annotatorRendered = ReactDOM.render(annotator, document.getElementById('annotationHolder'));
+        }
+        imageEl.src = image_info.url;
+    }
+
+{% if annotate %}
+    function viewAnnotateImage(viewImageIndex){
+        let image_info = images_data[viewImageIndex];
+        let existing_annotations = boxes[image_info.id];
+
+        if (viewAnnotatorRendered != null) {
+            ReactDOM.unmountComponentAtNode(document.getElementById("viewAnnotationHolder"));
+            viewAnnotatorRendered = null;
+        }
+        
+        $("#viewCurrentImageProgress").text('Image ' + (viewImageIndex + 1) + ' / ' + images_data.length);
+
+        let imageEl = new Image();
+        imageEl.onload = function(){
+            let annotator = React.createElement(document.LeafletAnnotation, {
+                imageElement : imageEl,
+                image : image_info,
+                annotations : existing_annotations,
+                categories : [],
+                options : {
+                    enableBoxEdit : false,
+                    map : {
+                        attributionControl : false,
+                        zoomControl : false,
+                        boxZoom : true,
+                        doubleClickZoom : true,
+                        keyboard : true,
+                        scrollWheelZoom : true
+                    },
+                    renderBoxes : true,
+                    disableSidebar : true
+                }
+            }, null);
+            viewAnnotatorRendered = ReactDOM.render(annotator, document.getElementById('viewAnnotationHolder'));
+        }
+        imageEl.src = image_info.url;
+    }
+    function saveCurrentAnnotations(){
+        if (annotatorRendered != null){
+            let annos = annotatorRendered.getAnnotations({
+                modifiedOnly : false,
+                excludeDeleted : true
+            });
+
+            boxes[images_data[currentImageIndex].id] = annos;
+            $("#boxes").val(JSON.stringify(boxes));
+            // setTimeout is a hack to prevent race to viewCurrentImageIndex (though it leads to irrelevant errors)
+            setTimeout(function() {
+                if($("#sideViewer").is(":visible")) {
+                    viewAnnotateImage(viewCurrentImageIndex);
+                }
+            }, 10);
+        }
+    }
+
+    $(document).mouseup(function(e){
+        saveCurrentAnnotations();
+    });
+
+    $("#addElephant").click(function(){
+        max_category_id += 1
+        categories.push({'id': max_category_id, 'name': 'New Elephant ' + max_category_id});
+        annotateImage(currentImageIndex);
+    });
+{% endif %}
+
+    $("#nextImageButton").click(function(){
+        currentImageIndex = (currentImageIndex + 1) % images_data.length;
+        annotateImage(currentImageIndex);
+    });
+
+    $("#previousImageButton").click(function(){
+        currentImageIndex = (currentImageIndex - 1 + images_data.length) % images_data.length;
+        annotateImage(currentImageIndex);
+    });
+
+    $("#viewNextImageButton").click(function(){
+        viewCurrentImageIndex = (viewCurrentImageIndex + 1) % images_data.length;
+        viewAnnotateImage(viewCurrentImageIndex);
+    });
+
+    $("#viewPreviousImageButton").click(function(){
+        viewCurrentImageIndex = (viewCurrentImageIndex - 1 + images_data.length) % images_data.length;
+        viewAnnotateImage(viewCurrentImageIndex);
+    });
+
+    annotateImage(currentImageIndex);
+
+    $("#annotationHolder").mouseover(function() {
+        document.addEventListener("keydown", handleKeyDown);
+      }).mouseleave(function() {
+        document.removeEventListener("keydown", handleKeyDown);
+    });
+
+    function handleKeyDown(e){
+        let LEFT_KEY = 37; // Navigate to previous image
+        let RIGHT_KEY = 39; // Navigate to next image
+
+        switch(e.keyCode){
+            case LEFT_KEY:
+                $("#previousImageButton").trigger("click");
+                break;
+            case RIGHT_KEY:
+                $("#nextImageButton").trigger("click");
+                break;
+        }
+    }
+
+    $("#viewAnnotationHolder").mouseover(function() {
+        document.addEventListener("keydown", viewHandleKeyDown);
+      }).mouseleave(function() {
+        document.removeEventListener("keydown", viewHandleKeyDown);
+    });
+
+    function viewHandleKeyDown(e){
+        let LEFT_KEY = 37; // Navigate to previous image
+        let RIGHT_KEY = 39; // Navigate to next image
+
+        switch(e.keyCode){
+            case LEFT_KEY:
+                $("#viewPreviousImageButton").trigger("click");
+                break;
+            case RIGHT_KEY:
+                $("#viewNextImageButton").trigger("click");
+                break;
+        }
+    }
+    
+</script>

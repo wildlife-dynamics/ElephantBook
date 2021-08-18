@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Individual Sighting {{ individual_sighting.id }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'individual sighting list' %}">Individual Sighting</a> {{ individual_sighting.id }}:
+<ul>
+    <li>Group Sighting: <a href="{% url 'group sighting view' individual_sighting.group_sighting.earthranger_serial %}"> {{ individual_sighting.group_sighting.id }} </a></li>
+    <li>EarthRanger Serial: {{ individual_sighting.group_sighting.earthranger_serial }} </li>
+    <li>EarthRanger ID: <a href="{{ ER_MAIN }}event/{{ individual_sighting.group_sighting.earthranger_id }}">{{ individual_sighting.group_sighting.earthranger_id }}</a><br/>
+        <a href="{{ ER_ADMIN }}event/{{ individual_sighting.group_sighting.earthranger_id }}">ER Admin</a>  </li>
+    <li>Individual: 
+        {% if individual_sighting.individual %}
+        <a href="{% url 'individual view' individual_sighting.individual.id %}">{{ individual_sighting.individual }}</a>
+        {% else %}
+        None
+        {% endif %}
+    </li>
+    <li>Time: {{ individual_sighting.group_sighting.datetime }} </li>
+    <li>Lat, Lon: ({{ individual_sighting.group_sighting.lat }}, {{ individual_sighting.group_sighting.lon }}) </li>
+    <li>Social Sightings:
+        {% if individual_sighting.social_sighting_set %}
+            <ul>
+            {% for social_sighting in individual_sighting.social_sighting_set.all %}
+                <li><a href="{%  url 'social sighting view' social_sighting.id %}"> {{ social_sighting.id }}</a>: Individual Sightings/Unphotographed Individuals present: {{ social_sighting.individual_sightings.count }}/{{ social_sighting.unphotographed_individuals.count }}</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            None
+        {% endif %}
+    </li>
+    <li>
+        {% include "../annotator/view.html" %}
+    </li>
+    <li>
+        <form action="{% url 'individual sighting edit' individual_sighting.id %}" method="post">
+            {% csrf_token %}
+            {{ edit_seek_form }}
+            <hr>
+            <button type="button" onclick="search(this.form)">Search Code in New Tab</button><br>
+            {{ set_identity_form }}
+            <hr>
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#elephantVoices" aria-expanded="false" aria-controls="collapseExample">
+                Expand Elephant Voices Attributes
+            </button>
+            <div class="collapse" id="elephantVoices">
+                <p>For help, please see: <a href="https://www.elephantvoices.org/multimedia-resources/how-to-identify-african-elephants.html">How to identify African elephants</a></p>
+                {{ elephant_voices_identity_form }}
+            </div>
+            <hr>
+            Injuries:
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#injuryInfo" aria-expanded="false" aria-controls="collapseExample">
+                Instructions
+            </button>
+            <div class="collapse" id="injuryInfo">
+                <p>Please record visible injuries below. Use the "+" button to add a new injury. After setting the `Individual`, you can automatically copy the `Injury` objects from the last `Individual_Sighting` with the `auto_propagate_injuries` button as long as you haven't logged any new ones yet. If the injury has no location (e.g. the elephant has a limp without a visible wound) please give it location "0".</p>
+                <img src="{% static 'injury_outline_r.jpg' %}" width="40%">
+                <img src="{% static 'injury_outline_l.jpg' %}" width="40%">
+            </div>
+            <br>
+            {{ propagate_injury_form }}
+            <div id="injury_formset">
+                {{ injury_formset.management_form }}
+                {% for injury_form in injury_formset %}
+                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#injury{{ forloop.counter0 }}" aria-expanded="false" aria-controls="collapseExample">
+                        Injury {{ forloop.counter0 }}
+                    </button>
+                    <div class="collapse" id="injury{{ forloop.counter0 }}">
+                        {{ injury_form }}
+                    </div>
+                {% endfor %}
+                <input type="button" value="+" id="add_injury">
+                <div id="empty_injury_form" style="display:none">
+                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#newinjury?" aria-expanded="false" aria-controls="collapseExample">
+                        New Injury ?
+                    </button>
+                    <div class="collapse" id="newinjury?">
+                        {{ injury_formset.empty_form }}
+                    </div>
+                </div>
+            </div>
+            <hr>
+            {{ form }}
+            <hr>
+            <input type="submit" value="Save" />
+        </form>
+    </li>
+</ul>
+
+<script>
+    function search(form) {
+        let endpoint = "{% url 'search' %}?";
+        // Hacky way to distinguish between SEEK and non-SEEK form elements
+        Array.prototype.forEach.call(Array.prototype.slice.call(form.elements, 1, 18), 
+                                     element => element.value ? endpoint += element.name+"="+element.value+"&" : 1);
+        window.open(endpoint, "_blank");
+    }
+
+    let n_new_injuries = 0;
+    $('#add_injury').click(function() {
+        var form_idx = parseInt($("#id_form-TOTAL_FORMS").val());
+        n_new_injuries++;
+        $("#injury_formset").append($("#empty_injury_form").html().replace(/__prefix__/g, form_idx).replaceAll("newinjury?", "newinjury"+n_new_injuries).replace("New Injury ?", "New Injury "+n_new_injuries));
+        $("#id_form-TOTAL_FORMS").val(form_idx + 1);
+    });
+</script>
+{% endblock %}

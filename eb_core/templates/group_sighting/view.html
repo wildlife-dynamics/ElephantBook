@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Group Sighting {{ group_sighting.earthranger_serial }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'group sighting list' %}">Group Sighting</a> {{ group_sighting.id }}:
+<ul>
+    <li>EarthRanger Serial: {{ group_sighting.earthranger_serial }}</li>
+    <li>EarthRanger ID: <a href="{{ ER_MAIN }}event/{{ group_sighting.earthranger_id }}">{{ group_sighting.earthranger_id }}</a><br/>
+        <a href="{{ ER_ADMIN }}event/{{ group_sighting.earthranger_id }}">ER Admin</a></li>
+    <li>Time: {{ group_sighting.datetime }} </li>
+    <li>Lat, Lon: ({{ group_sighting.lat }}, {{ group_sighting.lon }}) </li>
+    <li>Individual Sightings:
+        <ol>
+            {% for individual_sighting in group_sighting.individual_sighting_set.all %}
+                <li> ID: {% if individual_sighting.individual %}
+                            <a href="{% url 'individual view' individual_sighting.individual.id %}"> {{ individual_sighting.individual.name }} </a>
+                         {% else %}
+                            Unknown
+                         {% endif %}
+                    <br>
+                    Individual Sighting: <a href="{% url 'individual sighting view' individual_sighting.id %}"> {{ individual_sighting.id }} </a>
+                </li>
+            {% endfor %}
+        </ol>
+    </li>
+</ul>
+<ul>
+    <form action="{% url 'group sighting edit' group_sighting.earthranger_serial %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <li>
+            Unphotographed Individuals ({{ group_sighting.unphotographed_individuals.count }}):
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#unphotographed_individuals" aria-expanded="false" aria-controls="collapseExample">
+                Expand
+            </button>
+            <div class="collapse" id="unphotographed_individuals">
+                <p>Please record any Individuals you saw in the field but were unable to take any photos of in the following section:</p>
+                {{ unphotographed_individuals_form.unphotographed_individuals }}
+            </div>
+        </li>
+    {{ social_sighting_formset.management_form }}
+    {% if group_sighting.individual_sighting_set.count or group_sighting.unphotographed_individuals.count %}
+        <li>
+            Social Sightings:
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#social_sighting_info" aria-expanded="false" aria-controls="collapseExample">
+                Instructions
+            </button>
+            <div class="collapse" id="social_sighting_info">
+                <p>Please group subgroups of elephants by social interaction. Select all relevant Individual_Sightings and unphotographed Individuals.</p>
+            </div>
+            <br>
+            <div id="social_sighting_formset">
+                <ul>
+                {% for social_sighting_form in social_sighting_formset %}
+                    <li>
+                        <a href="/social_sighting/{{ social_sighting_form.instance.id }}">{{ social_sighting_form.instance.id }}</a>
+                        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#social_sighting{{ forloop.counter0 }}" aria-expanded="false" aria-controls="collapseExample">
+                            Expand
+                        </button>
+                        <div class="collapse" id="social_sighting{{ forloop.counter0 }}">
+                            {{ social_sighting_form }}
+                        </div>
+                    </li>
+                {% endfor %}
+                </ul>
+                <input type="button" value="+" id="add_social_sighting">
+                <div id="empty_social_sighting_form" style="display:none">
+                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#new_social_sighting?" aria-expanded="false" aria-controls="collapseExample">
+                        New Social Sighting ?
+                    </button>
+                    <div class="collapse" id="new_social_sighting?">
+                        {{ social_sighting_formset.empty_form }}
+                    </div>
+                </div>
+            </div>
+        </li>
+    {% endif %}
+    <li>
+        Add images: {{ form.images }}
+        <input type="submit" value="Upload Selected Images" />
+        <hr>
+        {% include "../annotator/view.html" with images=images boxes=boxes categories=categories annotate=True %}
+        <input type="hidden" name="boxes" id="boxes" value="">
+        <hr>
+        Notes:
+        <br>
+        {{ notes_form.notes }}
+        <hr>
+        <input type="submit" value="Save" />
+    </li>
+    </form>
+</ul>
+
+<script>
+    let n_new_social_sightings = 0;
+    $('#add_social_sighting').click(function() {
+        var form_idx = parseInt($("#id_form-TOTAL_FORMS").val());
+        n_new_social_sightings++;
+        $("#social_sighting_formset").append($("#empty_social_sighting_form").html().replace(/__prefix__/g, form_idx).replaceAll("new_social_sighting?", "new_social_sighting"+n_new_social_sightings).replace("New Social Sighting ?", "New Social Sighting "+n_new_social_sightings));
+        $("#id_form-TOTAL_FORMS").val(form_idx + 1);
+    });
+</script>
+{% endblock %}
