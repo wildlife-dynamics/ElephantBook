@@ -534,6 +534,7 @@ def individual_view(request, individual_id):
         'Individual': {i: Individual_Photo.objects.get(image=image['id']).thumbnail.url
                        for i, image in enumerate(images)}
     }
+    image_index = len(thumbnails['Individual'])
 
     individual_sighting_bbox_set = [
         bbox for individual_sighting in individual.individual_sighting_set.all()
@@ -554,7 +555,6 @@ def individual_view(request, individual_id):
         for bbox in individual_sighting_bbox_set
     })
 
-    image_index = len(thumbnails)
     for individual_sighting in individual.individual_sighting_set.all():
         thumbnails[individual_sighting.group_sighting.earthranger_serial] = {
             i + image_index: bbox.photo.thumbnail.url

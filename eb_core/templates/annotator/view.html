@@ -17,7 +17,7 @@
     </nav>
     <div class="tab-content" id="nav-tabContent">
         {% for _, images in thumbnails.items %}
-            <div class="tab-pane fade" id="gallery-0" role="tabpanel" aria-labelledby="gallery-0-tab">
+            <div class="tab-pane fade {{ forloop.first|yesno:'show active,' }}" id="gallery-{{ forloop.counter0 }}" role="tabpanel" aria-labelledby="gallery-{{ forloop.counter0 }}-tab">
             {% for image_id, image in images.items %}
                 <img src="{{ image }}" style="width: 100px" onclick="currentImageIndex={{ image_id }}; annotateImage(currentImageIndex);">
             {% endfor %}
