@@ -1,0 +1,26 @@
+{% extends "group_sighting/view.html" %}
+
+{% block info %}
+<a href="{% url 'earthranger sighting list' %}">EarthRanger Sighting</a> {{ object }}:
+<ul>
+    <li>EarthRanger Serial: {{ object.earthranger_serial }}</li>
+    <li>EarthRanger ID: <a href="{{ ER_MAIN }}event/{{ object.earthranger_id }}">{{ object.earthranger_id }}</a><br/>
+        <a href="{{ ER_ADMIN }}event/{{ object.earthranger_id }}">ER Admin</a></li>
+    <li>Time: {{ object.datetime }} </li>
+    <li>Lat, Lon: ({{ object.lat }}, {{ object.lon }}) </li>
+    <li>Individual Sightings:
+        <ol>
+            {% for individual_sighting in object.individual_sighting_set.all %}
+                <li> ID: {% if individual_sighting.individual %}
+                            <a href="{% url 'individual view' individual_sighting.individual.pk %}"> {{ individual_sighting.individual.name }} </a>
+                         {% else %}
+                            Unknown
+                         {% endif %}
+                    <br>
+                    Individual Sighting: <a href="{% url 'individual sighting view' individual_sighting.pk %}"> {{ individual_sighting.pk }} </a>
+                </li>
+            {% endfor %}
+        </ol>
+    </li>
+</ul>
+{% endblock %}

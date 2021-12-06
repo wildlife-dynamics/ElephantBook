@@ -1,25 +1,59 @@
 {% extends "base.html" %}
 
-{% block title %}Home{% endblock %}
-
 {% block content %}
-<ul>
-    <li><a href="{% url 'add earthranger' %}">Add Group Sighting From EarthRanger</a></li>
-    <li><a href="{% url 'group sighting list' %}">View Group Sightings</a></li>
-    <li><a href="{% url 'social sighting list' %}">View Social Sightings</a></li>
-    <li><a href="{% url 'individual sighting list' %}">View Individual Sightings</a>
+{% if perms.eb_core.main %}
+    <b>EarthRanger Sighting</b>
+    <ul>
+        <li><a href="{% url 'earthranger sighting create' %}">Create</a></li>
+        <li><a href="{% url 'earthranger sighting list' %}">List</a></li>
+    </ul>
+
+    <b>Individual Sighting</b>
+    <ul>
+        <li><a href="{% url 'individual sighting list' %}">List</a></li>
+        <li><a href="{% url 'seek search' %}">SEEK Search</a></li>
+        <li><a href="{% url 'individual sighting queue' %}">Queue</a></li>
+        {% if perms.eb_core.expert %}
+            <li><a href="{% url 'individual sighting expert queue' %}">Expert Queue</a></li>
+        {% endif %}
+        <li><a href="{% url 'individual sighting unidentified list' %}">Unidentified List</a></li>
+    </ul>
+
+    <b>Individual</b>
+    <ul>
+        <li><a href="{% url 'individual create' %}">Create</a></li>
+        <li><a href="{% url 'individual list' %}">List</a></li>
+        <li><a href="{% url 'individual combine' %}">Combine</a></li>
+    </ul>
+
+    {% if perms.eb_core.advanced %}
+        <b>Admin</b>
         <ul>
-            <li><a href="{% url 'search' %}">Individual Sighting Search Using SEEK</a></li>
-            <li><a href="{% url 'individual sighting queue' %}">Individual Sighting Queue</a></li>
-{% if user.expert %}
-            <li><a href="{% url 'individual sighting expert queue' %}">Individual Sighting Expert Review Queue</a></li>
-{% else %}
-            <li>You are not registered as an expert in SEEK. Please contact Dr. Jake Wall if you believe this is in error.</li>
-{% endif %}
-            <li><a href="{% url 'individual sighting unidentified' %}">Unidentified Individual Sightings</a></li>
+            <li><a href="{% url 'ebuser create' %}">Create EBUser</a></li>
         </ul>
-    </li>
-    <li><a href="{% url 'individual list' %}">View Individuals</a></li>
-    <li><a href="{% url 'stats' %}">View Data Statistics</a></li>
-</ul>
+
+        <b>Stats</b>
+        <ul>
+            <li><a href="{% url 'stats' %}">View Data Statistics</a></li>
+        </ul>
+
+        <b>Group Sighting</b>
+        <ul>
+            <li><a href="{% url 'group sighting create' %}">Create</a></li>
+            <li><a href="{% url 'group sighting list' %}">List</a></li>
+        </ul>
+    {% endif %}
+{% endif %}
+
+{% if perms.eb_anno.main %}
+    <b>Bulk Annotation</b>
+    <ul>
+    {% if perms.eb_anno.advanced %}
+        <li><a href="{% url 'eb_anno:assignment list' %}">List</a></li>
+    {% endif %}
+        <li><a href="{% url 'eb_anno:assignment queue' %}">Queue</a></li>
+        <li><a href="{% url 'eb_anno:assignment completed list' %}">Completed List</a></li>
+        <li><a href="{% url 'eb_anno:assignment needs review list' %}">Needs Review List</a></li>
+    </ul>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<a href="{% url 'eb_anno:assignment queue' %}">Assignment</a> {{ object.pk }}:
+<ul>
+    <li>
+        <form method="post">
+            {% csrf_token %}
+            {% include "annotator/view.html" with images=images boxes=boxes categories=categories annotate=True %}
+            <input type="hidden" name="boxes" id="boxes" value="">
+            <hr>
+            {% if seek_identity_form %}
+            {{ seek_identity_form }}
+            <hr>
+            {% endif %}
+            {% if elephant_voices_identity_form %}
+            {{ elephant_voices_identity_form }}
+            <hr>
+            {% endif %}
+            {{ form }}
+            <hr>
+            <input type="submit" value="Save" />
+        </form>
+    </li>
+</ul>
+{% endblock %}

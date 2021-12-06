@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<ol>
+    {% for i, result in results.iterrows %}
+    <li>{{ result.seek_code }}<br/>
+        Score: {{ result.seek_score }}<br/>
+        <a href="{% url 'individual view' result.individual.pk %}">{{ result.individual.name }}</a>
+    </li>
+    {% empty %}
+    No matching Seek_Identity.
+    {% endfor %}
+</ol>
+{% endblock %}

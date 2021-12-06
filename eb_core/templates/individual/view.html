@@ -1,38 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Individual {{ individual.name }}{% endblock %}
-
 {% block content %}
 <div class="container-fluid" style="padding: 0;">
     <div class="row">
         <div class="col">
-            <a href="{% url 'individual list' %}">Individual</a> {{ individual.id }}:
+            <a href="{% url 'individual list' %}">Individual</a> {{ object.pk }}:
             <ul>
-                <li>Name: {{ individual.name }}</li>
+                <li>Name: {{ object.name }}</li>
                 {% if last_individual_sighting %}
-                <li>Last EarthRanger Serial: {{ last_individual_sighting.group_sighting.earthranger_serial }}</li>
-                <li>Last EarthRanger ID: <a href="{{ ER_MAIN }}event/{{ last_individual_sighting.group_sighting.earthranger_id }}">{{ last_individual_sighting.group_sighting.earthranger_id }}</a></li>
-                <li>Last Group Sighting: <a href="{% url 'group sighting view' last_individual_sighting.group_sighting.earthranger_serial %}"> {{ last_individual_sighting.group_sighting.earthranger_serial }} </a></li>
-                <li>Last Individual Sighting: <a href="{% url 'individual sighting view' last_individual_sighting.id %}"> {{ last_individual_sighting.id }} </a></li>
-                <li><a href="{% url 'individual sighting list individual' individual.id %}">All Individual Sightings</a></li>
+                <li>Last Group Sighting: <a href="{% url 'group sighting view' last_individual_sighting.group_sighting.pk %}"> {{ last_individual_sighting.group_sighting.pk }} </a></li>
+                <li>Last Individual Sighting: <a href="{% url 'individual sighting view' last_individual_sighting.pk %}"> {{ last_individual_sighting.pk }} </a></li>
+                <li><a href="{% url 'individual sighting list individual' individual.pk %}">All Individual Sightings</a></li>
                 <li>Last Time: {{ last_individual_sighting.group_sighting.datetime }} </li>
                 <li>Last Lat, Lon: ({{ last_individual_sighting.group_sighting.lat }}, {{ last_individual_sighting.group_sighting.lon }}) </li>
                 {% endif %}
             </ul>
         </div>
         <div class="col">
-            {% if individual.profile %}
-                <a href="{% url 'view media' individual.profile.image.name %}"><img src="{{ individual.profile.compressed_image.url }}" style="width: 50%;" align="right"></a>
+            {% if object.profile %}
+                <a href="{% url 'view media' object.profile.image.name %}"><img src="{{ object.profile.compressed_image.url }}" style="width: 50%;" align="right"></a>
             {% endif %}
         </div>
     </div>
 </div>
-<form action="{% url 'individual edit' individual.id %}" method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     Add images: {{ form.images }}
     <input type="submit" value="Upload Selected Images" />
     <hr>
-    {% include "../annotator/view.html" with images=images boxes=boxes categories=categories %}
+    {% include "../annotator/view.html" with images=images boxes=boxes categories=categories annotate=True %}
+    <input type="hidden" name="boxes" id="boxes" value="">
     <hr>
     Notes:
     <br>

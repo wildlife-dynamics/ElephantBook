@@ -1,0 +1,5 @@
+{% extends "group_sighting/list.html" %}
+
+{% block object_display %}
+<a href="{% url 'earthranger sighting view' object.earthranger_serial %}"> {{ object }} {{ object.datetime }}</a>
+{% endblock %}

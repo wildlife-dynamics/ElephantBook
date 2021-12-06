@@ -1,12 +1,11 @@
 from django.contrib import admin
-
-from .models import *
-
 import django.db.models.fields
 from django.http import HttpResponse
 import json
 import numpy as np
 import pandas as pd
+
+from .models import *
 
 
 class Seek_Identity_Admin(admin.ModelAdmin):
@@ -26,7 +25,7 @@ class Seek_Identity_Admin(admin.ModelAdmin):
 
 class Individual_Admin(admin.ModelAdmin):
     def co_occurrence(self, request, queryset):
-        queryset = queryset.order_by('id')
+        queryset = queryset.order_by('pk')
         pks = np.array([individual.pk for individual in queryset])
         pk_map = dict(zip(pks, range(len(pks))))
 
@@ -46,7 +45,7 @@ class Individual_Admin(admin.ModelAdmin):
         return response
 
     def export(self, request, queryset):
-        queryset = queryset.order_by('id')
+        queryset = queryset.order_by('pk')
         seek_fields = [
             field for field in Seek_Identity._meta.get_fields() if type(field) == django.db.models.fields.CharField
         ]
@@ -81,7 +80,8 @@ class Individual_Admin(admin.ModelAdmin):
 
 admin.site.register(Individual_Sighting)
 admin.site.register(Group_Sighting)
-admin.site.register(Social_Sighting)
+admin.site.register(EarthRanger_Sighting)
+admin.site.register(Subgroup_Sighting)
 admin.site.register(Individual, Individual_Admin)
 admin.site.register(Seek_Identity, Seek_Identity_Admin)
 

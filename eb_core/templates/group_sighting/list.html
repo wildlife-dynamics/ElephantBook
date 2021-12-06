@@ -1,0 +1,6 @@
+{% extends "list.html" %}
+{% load utils %}
+
+{% block object_display %}
+{{ object|get_type }} <a href="{% url 'group sighting view' object.pk %}"> {{ object }} {{ object.datetime }}</a>
+{% endblock %}

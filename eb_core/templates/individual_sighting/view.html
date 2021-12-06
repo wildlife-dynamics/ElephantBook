@@ -1,29 +1,27 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Individual Sighting {{ individual_sighting.id }}{% endblock %}
-
 {% block content %}
-<a href="{% url 'individual sighting list' %}">Individual Sighting</a> {{ individual_sighting.id }}:
+<a href="{% url 'individual sighting list' %}">Individual Sighting</a> {{ object.pk }}:
 <ul>
-    <li>Group Sighting: <a href="{% url 'group sighting view' individual_sighting.group_sighting.earthranger_serial %}"> {{ individual_sighting.group_sighting.id }} </a></li>
-    <li>EarthRanger Serial: {{ individual_sighting.group_sighting.earthranger_serial }} </li>
-    <li>EarthRanger ID: <a href="{{ ER_MAIN }}event/{{ individual_sighting.group_sighting.earthranger_id }}">{{ individual_sighting.group_sighting.earthranger_id }}</a><br/>
-        <a href="{{ ER_ADMIN }}event/{{ individual_sighting.group_sighting.earthranger_id }}">ER Admin</a>  </li>
+    <li>Group Sighting: <a href="{% url 'group sighting view' object.group_sighting.pk %}"> {{ object.group_sighting.pk }} </a></li>
+    <li>EarthRanger Serial: {{ object.group_sighting.earthranger_serial }} </li>
+    <li>EarthRanger ID: <a href="{{ ER_MAIN }}event/{{ object.group_sighting.earthranger_id }}">{{ object.group_sighting.earthranger_id }}</a><br/>
+        <a href="{{ ER_ADMIN }}event/{{ object.group_sighting.earthranger_id }}">ER Admin</a>  </li>
     <li>Individual: 
-        {% if individual_sighting.individual %}
-        <a href="{% url 'individual view' individual_sighting.individual.id %}">{{ individual_sighting.individual }}</a>
+        {% if object.individual %}
+        <a href="{% url 'individual view' object.individual.pk %}">{{ object.individual }}</a>
         {% else %}
         None
         {% endif %}
     </li>
-    <li>Time: {{ individual_sighting.group_sighting.datetime }} </li>
-    <li>Lat, Lon: ({{ individual_sighting.group_sighting.lat }}, {{ individual_sighting.group_sighting.lon }}) </li>
-    <li>Social Sightings:
-        {% if individual_sighting.social_sighting_set %}
+    <li>Time: {{ object.group_sighting.datetime }} </li>
+    <li>Lat, Lon: ({{ object.group_sighting.lat }}, {{ object.group_sighting.lon }}) </li>
+    <li>Subgroup Sightings:
+        {% if object.subgroup_sighting_set %}
             <ul>
-            {% for social_sighting in individual_sighting.social_sighting_set.all %}
-                <li><a href="{%  url 'social sighting view' social_sighting.id %}"> {{ social_sighting.id }}</a>: Individual Sightings/Unphotographed Individuals present: {{ social_sighting.individual_sightings.count }}/{{ social_sighting.unphotographed_individuals.count }}</li>
+            {% for subgroup_sighting in object.subgroup_sighting_set.all %}
+                <li><a href="{%  url 'subgroup sighting view' subgroup_sighting.pk %}"> {{ subgroup_sighting.pk }}</a>: Individual Sightings/Unphotographed Individuals present: {{ subgroup_sighting.individual_sightings.count }}/{{ subgroup_sighting.unphotographed_individuals.count }}</li>
             {% endfor %}
             </ul>
         {% else %}
@@ -34,20 +32,12 @@
         {% include "../annotator/view.html" %}
     </li>
     <li>
-        <form action="{% url 'individual sighting edit' individual_sighting.id %}" method="post">
+        <form method="post">
             {% csrf_token %}
             {{ edit_seek_form }}
             <hr>
             <button type="button" onclick="search(this.form)">Search Code in New Tab</button><br>
             {{ set_identity_form }}
-            <hr>
-            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#elephantVoices" aria-expanded="false" aria-controls="collapseExample">
-                Expand Elephant Voices Attributes
-            </button>
-            <div class="collapse" id="elephantVoices">
-                <p>For help, please see: <a href="https://www.elephantvoices.org/multimedia-resources/how-to-identify-african-elephants.html">How to identify African elephants</a></p>
-                {{ elephant_voices_identity_form }}
-            </div>
             <hr>
             Injuries:
             <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#injuryInfo" aria-expanded="false" aria-controls="collapseExample">
@@ -90,7 +80,7 @@
 
 <script>
     function search(form) {
-        let endpoint = "{% url 'search' %}?";
+        let endpoint = "{% url 'seek search' %}?";
         // Hacky way to distinguish between SEEK and non-SEEK form elements
         Array.prototype.forEach.call(Array.prototype.slice.call(form.elements, 1, 18), 
                                      element => element.value ? endpoint += element.name+"="+element.value+"&" : 1);

@@ -1,8 +1,19 @@
+{% load static %}
+{% load utils %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   
-    <title>{% block title %}Title{% endblock %}</title>
+    <title>
+        {% block title %}
+        {% if title %}
+            {{ title }}
+        {% else %}
+            {{ view|get_pretty_type }}
+        {% endif %}
+        {% endblock %}
+    </title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -12,7 +23,6 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 
-{% load static %}
     <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
 </head>
 <body>
@@ -41,6 +51,25 @@
 <div class="container-fluid">
 {% if user.is_authenticated %}
 {% block content %}{% endblock %}
+
+{% block pagination %}
+    {% if is_paginated %}
+        <div class="pagination">
+            <span class="page-links">
+                {% if page_obj.has_previous %}
+                    <a href="{{ request.path }}?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+                <span class="page-current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="{{ request.path }}?page={{ page_obj.next_page_number }}">next</a>
+                {% endif %}
+            </span>
+        </div>
+    {% endif %}
+{% endblock %}
+
 {% else %}
 <form method="post" action="{% url 'login' %}">
     {% csrf_token %}

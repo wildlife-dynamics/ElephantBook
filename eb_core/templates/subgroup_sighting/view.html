@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<a href="{% url 'subgroup sighting list' %}">Subgroup Sighting</a> {{ object.pk }}:
+<ul>
+    <li>Group Sighting: <a href="{% url 'group sighting view' object.group_sighting.earthranger_serial %}"> {{ object.group_sighting.earthranger_serial }} </a></li>
+    <li>EarthRanger ID: <a href="{{ ER_MAIN }}event/{{ object.group_sighting.earthranger_id }}">{{ object.group_sighting.earthranger_id }}</a><br/>
+        <a href="{{ ER_ADMIN }}event/{{ individual_sighting.group_sighting.earthranger_id }}">ER Admin</a>  </li>
+    <li>Photographed/unphotographed elephants: {{ object.individual_sightings.count }}/{{ object.unphotographed_individuals.count }}</li>
+    <li>Individual Sightings:
+        {% if object.individual_sightings.count %}
+        <ol>
+            {% for individual_sighting in object.individual_sightings.all %}
+                <li> ID: {% if individual_sighting.individual %}
+                    <a href="{% url 'individual view' individual_sighting.individual.pk %}"> {{ individual_sighting.individual }} </a>
+                    {% else %}
+                        Unknown
+                    {% endif %}
+                    <br>
+                    Individual Sighting: <a href="{% url 'individual sighting view' individual_sighting.pk %}"> {{ individual_sighting }} </a>
+                </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+            None
+        {% endif %}
+    </li>
+    <li>Unphotographed Individuals:
+        {% if object.unphotographed_individuals.count %}
+            <ol>
+                {% for individual in object.unphotographed_individuals.all %}
+                    <li> ID: <a href="{% url 'individual view' individual.pk %}"> {{ individual }} </a></li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            None
+        {% endif %}
+    </li>
+    <li>Time: {{ object.group_sighting.datetime }} </li>
+    <li>Lat, Lon: ({{ object.group_sighting.lat }}, {{ object.group_sighting.lon }}) </li>
+    <li>
+        {% include "../annotator/view.html" with images=images boxes=boxes categories=categories %}
+    </li>
+    <li>
+        <form method="post">
+            {% csrf_token %}
+            Notes:
+            <br>
+            {{ form.notes }}
+            <hr>
+            <input type="submit" value="Save" />
+        </form>
+    </li>
+</ul>
+
+{% endblock %}

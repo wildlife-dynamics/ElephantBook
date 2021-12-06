@@ -43,7 +43,7 @@
         <h4 id="currentImageProgress">Image -1 / -1</h4>
         <button id="previousImageButton" type="button">Previous</button>
         <button id="nextImageButton" type="button">Next</button>
-{% if annotate %}
+{% if annotate and fixed_categories is not True %}
         <button id="addElephant" type="button">Add Elephant to List of Identities</button>
 {% endif %}
         <div id="annotationHolder"></div>
