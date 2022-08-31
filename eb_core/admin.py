@@ -1,31 +1,48 @@
-from django.contrib import admin
-import django.db.models.fields
-from django.http import HttpResponse
 import json
+
+import django.db.models.fields
 import numpy as np
 import pandas as pd
+from django.contrib import admin
+from django.http import HttpResponse
 
-from .models import *
+from .models import (
+    EarthRanger_Sighting,
+    EBUser,
+    Group_Sighting,
+    Individual,
+    Individual_Bounding_Box,
+    Individual_Photo,
+    Individual_Sighting,
+    Injury,
+    Seek_Identity,
+    Sighting_Bounding_Box,
+    Sighting_Photo,
+    Subgroup_Sighting,
+)
 
 
 class Seek_Identity_Admin(admin.ModelAdmin):
     def export(self, request, queryset):
-        entries = [{
-            'author': query.author.username,
-            'individual': query.individual.name,
-            'code': str(query),
-        } for query in queryset]
-        response = HttpResponse(json.dumps(entries, indent=2), content_type='application/json')
-        response['Content-Disposition'] = 'attachment; filename="seek.json"'
+        entries = [
+            {
+                "author": query.author.username,
+                "individual": query.individual.name,
+                "code": str(query),
+            }
+            for query in queryset
+        ]
+        response = HttpResponse(json.dumps(entries, indent=2), content_type="application/json")
+        response["Content-Disposition"] = 'attachment; filename="seek.json"'
         return response
 
     actions = [export]
-    search_fields = ['=author__username', '=individual__name']
+    search_fields = ["=author__username", "=individual__name"]
 
 
 class Individual_Admin(admin.ModelAdmin):
     def co_occurrence(self, request, queryset):
-        queryset = queryset.order_by('pk')
+        queryset = queryset.order_by("pk")
         pks = np.array([individual.pk for individual in queryset])
         pk_map = dict(zip(pks, range(len(pks))))
 
@@ -37,15 +54,15 @@ class Individual_Admin(admin.ModelAdmin):
                     if individual_sighting_2.individual is not None:
                         weights[pk_map[individual.pk]][pk_map[individual_sighting_2.individual.pk]] += 1
 
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="co-occurrence.csv"'
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="co-occurrence.csv"'
 
         pd.DataFrame(data=weights, columns=pks, index=pks).to_csv(response)
 
         return response
 
     def export(self, request, queryset):
-        queryset = queryset.order_by('pk')
+        queryset = queryset.order_by("pk")
         seek_fields = [
             field for field in Seek_Identity._meta.get_fields() if type(field) == django.db.models.fields.CharField
         ]
@@ -53,29 +70,29 @@ class Individual_Admin(admin.ModelAdmin):
         data = []
         for individual in queryset:
             entry = {
-                'name': individual.name,
-                'num_sightings': individual.individual_sighting_set.count(),
+                "name": individual.name,
+                "num_sightings": individual.individual_sighting_set.count(),
             }
-            entry['sighting_times'] = [
+            entry["sighting_times"] = [
                 str(individual_sighting.group_sighting.datetime)
-                for individual_sighting in individual.individual_sighting_set.order_by('group_sighting__datetime')
+                for individual_sighting in individual.individual_sighting_set.order_by("group_sighting__datetime")
             ]
-            if entry['num_sightings']:
+            if entry["num_sightings"]:
                 seek_code = individual.individual_sighting_set.latest().seek_identity
                 entry.update({field.name: getattr(seek_code, field.name) for field in seek_fields})
             data.append(entry)
         df = pd.DataFrame(data)
         df.index = [individual.pk for individual in queryset]
 
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="individuals.csv"'
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="individuals.csv"'
 
         df.to_csv(response)
 
         return response
 
     actions = [co_occurrence, export]
-    search_fields = ['=name']
+    search_fields = ["=name"]
 
 
 admin.site.register(Individual_Sighting)

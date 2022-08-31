@@ -1,5 +1,0 @@
-{% extends "list.html" %}
-
-{% block object_display %}
-<a href="{% url 'individual sighting view' object.pk %}"> {{ object }}</a>, Group Sighting: <a href="{% url 'group sighting view' object.group_sighting.pk %}">{{ object.group_sighting }}</a>
-{% endblock %}

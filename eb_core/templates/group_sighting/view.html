@@ -29,7 +29,7 @@
         {% csrf_token %}
         <li>
             Unphotographed Individuals ({{ object.unphotographed_individuals.count }}):
-            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#unphotographed_individuals" aria-expanded="false" aria-controls="collapseExample">
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#unphotographed_individuals">
                 Expand
             </button>
             <div class="collapse" id="unphotographed_individuals">
@@ -41,7 +41,7 @@
     {% if object.individual_sighting_set.count or object.unphotographed_individuals.count %}
         <li>
             Subgroup Sightings:
-            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#subgroup_sighting_info" aria-expanded="false" aria-controls="collapseExample">
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#subgroup_sighting_info">
                 Instructions
             </button>
             <div class="collapse" id="subgroup_sighting_info">
@@ -53,7 +53,7 @@
                 {% for subgroup_sighting_form in subgroup_sighting_formset %}
                     <li>
                         <a href="/subgroup_sighting/{{ subgroup_sighting_form.instance.pk }}">{{ subgroup_sighting_form.instance.pk }}</a>
-                        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#subgroup_sighting{{ forloop.counter0 }}" aria-expanded="false" aria-controls="collapseExample">
+                        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#subgroup_sighting{{ forloop.counter0 }}">
                             Expand
                         </button>
                         <div class="collapse" id="subgroup_sighting{{ forloop.counter0 }}">
@@ -64,7 +64,7 @@
                 </ul>
                 <input type="button" value="+" id="add_subgroup_sighting">
                 <div id="empty_subgroup_sighting_form" style="display:none">
-                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#new_subgroup_sighting?" aria-expanded="false" aria-controls="collapseExample">
+                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#new_subgroup_sighting?">
                         New Subgroup Sighting ?
                     </button>
                     <div class="collapse" id="new_subgroup_sighting?">
@@ -74,19 +74,25 @@
             </div>
         </li>
     {% endif %}
-    <li>
-        Add images: {{ form.images }}
-        <input type="submit" value="Upload Selected Images" />
+        {% include 'filepond.html' %}
         <hr>
-        {% include "../annotator/view.html" with images=images boxes=boxes categories=categories annotate=True %}
+        {% include "../annotator/view.html" with images=images boxes=boxes categories=categories max_category_id=max_category_id annotate=True %}
         <input type="hidden" name="boxes" id="boxes" value="">
+        <hr>
+        <button class="btn btn-danger" type="button" data-toggle="collapse" data-target="#deletePhotos">
+            Photo Deletion Menu
+        </button>
+        <div class="collapse" id="deletePhotos">
+            Any checked photos will be deleted, along with any bounding boxes or individual sightings attached to them. Beware.
+            {{ photo_delete_form.photos }}
+        </div>
         <hr>
         Notes:
         <br>
         {{ notes_form.notes }}
         <hr>
         <input type="submit" value="Save" />
-    </li>
+
     </form>
 </ul>
 

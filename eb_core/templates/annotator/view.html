@@ -1,6 +1,6 @@
 {% load static %}
 
-<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#photoGallery" aria-expanded="false" aria-controls="collapseExample">
+<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#photoGallery">
     Expand Photo Gallery
 </button>
 <div class="collapse" id="photoGallery">
@@ -19,7 +19,7 @@
         {% for _, images in thumbnails.items %}
             <div class="tab-pane fade {{ forloop.first|yesno:'show active,' }}" id="gallery-{{ forloop.counter0 }}" role="tabpanel" aria-labelledby="gallery-{{ forloop.counter0 }}-tab">
             {% for image_id, image in images.items %}
-                <img src="{{ image }}" style="width: 100px" onclick="currentImageIndex={{ image_id }}; annotateImage(currentImageIndex);">
+                <img src="{{ image }}" loading="lazy" style="width: 100px" onclick="annotateImage({{ image_id }});">
             {% endfor %}
             </div>
         {% endfor %}
@@ -28,7 +28,6 @@
 
 {% if annotate %}
 <label><input id="sideViewerCheck" type="checkbox" onclick="$('#sideViewer').toggle( this.checked ); " autocomplete="off">Show Side Viewer</label>
-<button type="button" onclick="images_data.forEach(image => {new Image().src = image.url});">Preload All Images</button>
 {% endif %}
 <div class="row">
 {% if annotate %}
@@ -39,13 +38,14 @@
         <div id="viewAnnotationHolder"></div>
     </div>
 {% endif %}
-    <div class="col">          
+    <div class="col-auto">
         <h4 id="currentImageProgress">Image -1 / -1</h4>
         <button id="previousImageButton" type="button">Previous</button>
         <button id="nextImageButton" type="button">Next</button>
 {% if annotate and fixed_categories is not True %}
         <button id="addElephant" type="button">Add Elephant to List of Identities</button>
 {% endif %}
+        <button id="fullResolution" type="button">Display Image in Full Resolution</button>
         <div id="annotationHolder"></div>
     </div>
 </div>
@@ -68,6 +68,20 @@
     .annotation-instance-supercategory-name{
         font-size: xx-small;
     }
+
+{% if hide_sidebar or not annotate %}
+    .category-selection-filter-results{
+        display: none;
+        visibility: hidden;
+    }
+{% endif %}
+
+{% if hide_sidebar %}
+    .annotation-sidebar{
+        display: none;
+        visibility: hidden;
+    }
+{% endif %}
 </style>
 
 <!-- Leaflet core CSS -->
@@ -77,8 +91,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.3/leaflet.draw.css"/>
 
 <!-- Load React -->
-<script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/react@16.14.0/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@16.14.0/umd/react-dom.development.js" crossorigin></script>
 
 <!-- Our App javascript file -->
 <script src="{% static 'leaflet.annotation.js' %}"></script>
@@ -95,10 +109,17 @@
 
     var categories = {{ categories|safe }};
     var max_category_id = categories.length == 0 ? 0 : categories.reduce((a,b)=>a.id>b.id?a:b).id;
+    {% if max_category_id %}
+    max_category_id = {{ max_category_id }}
+    {% endif %}
 
-    function annotateImage(imageIndex){
+    function annotateImage(imageIndex, full_resolution=false){
+        currentImageIndex = imageIndex;
         let image_info = images_data[imageIndex];
         let existing_annotations = boxes[image_info.id];
+
+        new Image().src = images_data[(imageIndex - 1 + images_data.length) % images_data.length].url
+        new Image().src = images_data[(imageIndex + 1) % images_data.length].url
 
         if(annotatorRendered != null){
             ReactDOM.unmountComponentAtNode(document.getElementById("annotationHolder"));
@@ -119,7 +140,7 @@
                     enableEditingImmediately : true,
 {% else %}
                     enableBoxEdit : false,
-{% endif %} 
+{% endif %}
                     map : {
                         attributionControl : false,
                         zoomControl : false,
@@ -145,11 +166,16 @@
             }, null);
             annotatorRendered = ReactDOM.render(annotator, document.getElementById('annotationHolder'));
         }
-        imageEl.src = image_info.url;
+        if(full_resolution){
+            imageEl.src = image_info.full_res;
+        } else {
+            imageEl.src = image_info.url;
+        }
     }
 
 {% if annotate %}
     function viewAnnotateImage(viewImageIndex){
+        viewCurrentImageIndex = viewImageIndex;
         let image_info = images_data[viewImageIndex];
         let existing_annotations = boxes[image_info.id];
 
@@ -157,7 +183,7 @@
             ReactDOM.unmountComponentAtNode(document.getElementById("viewAnnotationHolder"));
             viewAnnotatorRendered = null;
         }
-        
+
         $("#viewCurrentImageProgress").text('Image ' + (viewImageIndex + 1) + ' / ' + images_data.length);
 
         let imageEl = new Image();
@@ -209,29 +235,29 @@
 
     $("#addElephant").click(function(){
         max_category_id += 1
-        categories.push({'id': max_category_id, 'name': 'New Elephant ' + max_category_id});
+        categories.push({'id': max_category_id, 'name': 'New Individual Sighting ' + max_category_id});
         annotateImage(currentImageIndex);
     });
 {% endif %}
 
+    $("#fullResolution").click(function(){
+        annotateImage(currentImageIndex, full_resolution=true);
+    });
+
     $("#nextImageButton").click(function(){
-        currentImageIndex = (currentImageIndex + 1) % images_data.length;
-        annotateImage(currentImageIndex);
+        annotateImage((currentImageIndex + 1) % images_data.length);
     });
 
     $("#previousImageButton").click(function(){
-        currentImageIndex = (currentImageIndex - 1 + images_data.length) % images_data.length;
-        annotateImage(currentImageIndex);
+        annotateImage((currentImageIndex - 1 + images_data.length) % images_data.length);
     });
 
     $("#viewNextImageButton").click(function(){
-        viewCurrentImageIndex = (viewCurrentImageIndex + 1) % images_data.length;
-        viewAnnotateImage(viewCurrentImageIndex);
+        viewAnnotateImage((viewCurrentImageIndex + 1) % images_data.length);
     });
 
     $("#viewPreviousImageButton").click(function(){
-        viewCurrentImageIndex = (viewCurrentImageIndex - 1 + images_data.length) % images_data.length;
-        viewAnnotateImage(viewCurrentImageIndex);
+        viewAnnotateImage((viewCurrentImageIndex - 1 + images_data.length) % images_data.length);
     });
 
     annotateImage(currentImageIndex);
@@ -275,5 +301,5 @@
                 break;
         }
     }
-    
+
 </script>

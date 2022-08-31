@@ -7,4 +7,4 @@ class EB_FG_Permisson(models.Model):
 
         default_permissions = ()
 
-        permissions = (('main', 'Access EB FieldGuide'), )
+        permissions = (("main", "Access EB FieldGuide"),)

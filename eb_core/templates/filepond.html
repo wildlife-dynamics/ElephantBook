@@ -1,0 +1,69 @@
+<link href="https://unpkg.com/filepond@4.30.4/dist/filepond.css" rel="stylesheet">
+
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <input type="file" class="pond" name="filepond" accept="image/*" required="false">
+            <button id="filepond-submit" type="submit" disabled class="btn btn-primary" style="float:right;">Upload images</button>
+        </div>
+    </div>
+</div>
+
+<!-- include FilePond library and jQuery adapter -->
+<script src="https://unpkg.com/filepond@4.30.4/dist/filepond.min.js"></script>
+<script src="https://unpkg.com/jquery-filepond@1.0.0/filepond.jquery.js"></script>
+<script src="https://unpkg.com/filepond-plugin-file-validate-type@1.2.8/dist/filepond-plugin-file-validate-type.js"></script>
+
+<script>
+    FilePond.registerPlugin(FilePondPluginFileValidateType);
+
+    let uploaded = {};
+    let uploadIdFilenames = {};
+    let uploaded_error = {};
+
+    $(function(){
+        $('.pond').filepond({
+            allowMultiple: true,
+	    	chunkUploads: true,
+            chunkSize: 50000,
+	    	server: {
+	    		url: '/fp',
+	    		process: '/process/',
+	    		patch: '/patch/',
+	    		revert: '/revert/',
+	    		fetch: '/fetch/?target=',
+	    		load: '/load/?target='
+	    	},
+            maxParallelUploads: 5,
+            allowMinimumUploadDuration: false,
+            credits: [],
+
+            onaddfile: (err, file) => uploaded[file.id] = file.filename,
+
+            onprocessfile: (err, file) => {if (err === null) UpdateButton(true)},
+
+            onremovefile: (err, file) => {
+                if (file.id in uploaded) delete uploaded[file.id];
+                UpdateButton(false);
+            },
+
+            onerror: (err, file, status) => {
+                if(file.id in uploaded) {
+                    delete uploaded[file.id];
+                }
+                uploaded_error[file.id] = true;
+            }
+	    });
+
+        let UpdateButton = (state) => {
+            if (state && Object.keys(uploaded).length == 0) {
+                $('#filepond-submit').attr('disabled','');
+            }
+            else {
+                if (state) $('#filepond-submit').removeAttr('disabled');
+                else $('#filepond-submit').attr('disabled','');
+            }
+        }
+
+	  });
+</script>

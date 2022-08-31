@@ -19,17 +19,23 @@ from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import include, path
 
-admin.site.login = staff_member_required(admin.site.login, login_url='index')
+admin.site.login = staff_member_required(admin.site.login, login_url="index")
 
-urlpatterns = [
-    path('', include('eb_core.urls')),
-    path('anno/', include('eb_anno.urls')),
-    path('fg/', include('eb_fg.urls')),
-    path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL,
-                                                                           document_root=settings.STATIC_ROOT)
+urlpatterns = (
+    [
+        path("", include("eb_core.urls")),
+        path("anno/", include("eb_anno.urls")),
+        path("fg/", include("eb_fg.urls")),
+        path("api/", include("eb_api.urls")),
+        path("rcos_match/", include("rcos_match.urls")),
+        path("admin/", admin.site.urls),
+        path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
+        path("fp/", include("django_drf_filepond.urls")),
+    ]
+    + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+)
 
 urlpatterns += [
-    path('accounts/', include('django.contrib.auth.urls')),
+    path("accounts/", include("django.contrib.auth.urls")),
 ]

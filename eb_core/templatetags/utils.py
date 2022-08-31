@@ -10,4 +10,4 @@ def get_type(value):
 
 @register.filter
 def get_pretty_type(value):
-    return type(value).__name__.replace('_', ' ')
+    return type(value).__name__.replace("_", " ")

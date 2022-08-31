@@ -1,35 +1,182 @@
 {% load static %}
 <html>
+<!-- Adapted from https://stackoverflow.com/a/64733307 -->
 <head>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/godswearhats/jquery-ui-rotatable@1.1/jquery.ui.rotatable.css">
-    <script src="https://cdn.jsdelivr.net/gh/godswearhats/jquery-ui-rotatable@1.1/jquery.ui.rotatable.min.js"></script>
-
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $(
-                '<div id="seek_angle_drag" style="display: none; height: 0; width: 0; z-index: 1000;"><div id="seek_angle_rotate"></div></div>'
-            ).insertAfter("#navbar-main");
-            $("#seek_angle_rotate").rotatable({handleOffset: {left: 171.5}, rotationCenterOffset: {top: 80, left: 171.5}});
-            $("#seek_angle_drag").draggable();
+    <script type="text/javascript" defer>
+    document.addEventListener("DOMContentLoaded", function(){
+        var box = document.getElementById("seek-angle-box");
+        var boxWrapper = document.getElementById("seek-angle-box-wrapper");
+        const HEIGHT = 290;
+        const WIDTH = 343;
+    
+        var initX, initY, mousePressX, mousePressY, initW, initH, initRotate;
+    
+        function repositionElement(x, y) {
+            boxWrapper.style.left = x + 'px';
+            boxWrapper.style.top = y + 'px';
+        }
+    
+        function resize(w, h) {
+            box.style.width = w + 'px';
+            box.style.height = h + 'px';
+        }
+    
+        function getCurrentRotation(el) {
+        var st = window.getComputedStyle(el, null);
+        var tm = st.getPropertyValue("-webkit-transform") ||
+            st.getPropertyValue("-moz-transform") ||
+            st.getPropertyValue("-ms-transform") ||
+            st.getPropertyValue("-o-transform") ||
+            st.getPropertyValue("transform");
+        if (tm != "none") {
+            var values = tm.split('(')[1].split(')')[0].split(',');
+            var angle = Math.round(Math.atan2(values[1], values[0]) * (180 / Math.PI));
+            console.log(angle);
+            return (angle < 0 ? angle + 360 : angle);
+        }
+        return 0;
+        }
+    
+        function rotateBox(deg) {
+            boxWrapper.style.transform = `rotate(${deg}deg)`;
+        }
+    
+        boxWrapper.addEventListener('mousedown', function(event) {
+            if (event.target.id !== "seek-angle-box") {
+                return;
+            }
+        
+            initX = this.offsetLeft;
+            initY = this.offsetTop;
+            mousePressX = event.clientX;
+            mousePressY = event.clientY;
+        
+            function eventMoveHandler(event) {
+                repositionElement(initX + (event.clientX - mousePressX),
+                initY + (event.clientY - mousePressY));
+            }
+        
+            boxWrapper.addEventListener('mousemove', eventMoveHandler, false);
+            window.addEventListener('mouseup', function eventEndHandler() {
+                boxWrapper.removeEventListener('mousemove', eventMoveHandler, false);
+                window.removeEventListener('mouseup', eventEndHandler);
+            }, false);
+        }, false);
+    
+        document.getElementById("seek-angle-stretch").addEventListener('mousedown',
+            function resizeHandler(event) {
+                initX = boxWrapper.offsetLeft;
+                initY = boxWrapper.offsetTop;
+                mousePressX = event.clientX;
+                mousePressY = event.clientY;
+        
+                initW = box.offsetWidth;
+                initH = box.offsetHeight;
+        
+                initRotate = getCurrentRotation(boxWrapper);
+                var initRadians = initRotate * Math.PI / 180;
+                var cosFraction = Math.cos(initRadians);
+                var sinFraction = Math.sin(initRadians);
+        
+                function eventMoveHandler(event) {
+                var wDiff = (event.clientX - mousePressX);
+                var hDiff = (event.clientY - mousePressY);
+                var rotatedWDiff = cosFraction * wDiff + sinFraction * hDiff;
+        
+                var newW = initW,
+                    newH = initH,
+                    newX = initX,
+                    newY = initY;
+        
+                newW += rotatedWDiff;
+                newX += 0.5 * rotatedWDiff * cosFraction;
+        
+                newH = HEIGHT * newW / WIDTH
+        
+                resize(newW, newH);
+                repositionElement(newX, newY);
+                }
+        
+                window.addEventListener('mousemove', eventMoveHandler, false);
+                window.addEventListener('mouseup', function eventEndHandler() {
+                window.removeEventListener('mousemove', eventMoveHandler, false);
+                window.removeEventListener('mouseup', eventEndHandler);
+                }, false);
         });
+    
+        document.getElementById("seek-angle-rotate").addEventListener('mousedown', function(event) {
+            initX = this.offsetLeft;
+            initY = this.offsetTop;
+            mousePressX = event.clientX;
+            mousePressY = event.clientY;
+        
+            var arrow = document.getElementById("seek-angle-box");
+            var arrowRects = arrow.getBoundingClientRect();
+            var arrowX = arrowRects.left + arrowRects.width / 2;
+            var arrowY = arrowRects.top + arrowRects.height / 2;
+        
+            function eventMoveHandler(event) {
+                var angle = Math.atan2(event.clientY - arrowY, event.clientX - arrowX) + Math.PI / 2;
+                rotateBox(angle * 180 / Math.PI);
+            }
+        
+            window.addEventListener('mousemove', eventMoveHandler, false);
+        
+            window.addEventListener('mouseup', function eventEndHandler() {
+                window.removeEventListener('mousemove', eventMoveHandler, false);
+                window.removeEventListener('mouseup', eventEndHandler);
+            }, false);
+        }, false);
+        
+        repositionElement(0, 0);
+        resize(WIDTH, HEIGHT);  
+    });
     </script>
 
     <style>
-        .ui-wrapper {
-            overflow: visible!important;
+        #seek-angle-box-wrapper {
+            position: absolute;
+            transform-origin: 0 0;
+            user-select: none;
+            z-index: 9000;
         }
-        #seek_angle_rotate {
-            display: inline-block;
-            height: 290px;
-            width: 343px;
-            background-size:100% 100%;
-            background-image: url("{% static 'seek_angle.png' %}");
+
+        #seek-angle-box {
+            background-image: url("/static/seek_angle.png");
+            background-size: 100% 100%;
+            transform: translate(-50%, -50%);
+        }
+
+        #seek-angle-stretch {
+            height: 16px;
+            width: 16px;
+            background-image: url("https://code.jquery.com/ui/1.13.2/themes/base/images/ui-icons_444444_256x240.png");
+            background-position: -80px -224px;
+            position: absolute;
+            right: -8px;
+            top: 28.5%;
+            transform: translate(0, -71.5%) scale(2);
+        }
+
+        #seek-angle-rotate {
+            height: 16px;
+            width: 16px;
+            background-image: url("https://code.jquery.com/ui/1.13.2/themes/base/images/ui-icons_444444_256x240.png");
+            background-position: -128px -64px;
+            position: absolute;
+            left: 50%;
+            top: -8px;
+            transform: translate(-50%, 0) scale(3);
         }
     </style>
 </head>
 <body>
-    <button onclick="$('#seek_angle_drag').toggle()">SEEK Angle</button>
+    <button onclick="$('#seek-angle-box-wrapper').toggle()">SEEK Angle</button>
+    <div id="seek-angle-box-wrapper" style="display: none">
+        <div id="seek-angle-box">
+          <div id="seek-angle-rotate"></div>
+          <div id="seek-angle-stretch"></div>
+        </div>
+    </div>  
 </body>
 </html>

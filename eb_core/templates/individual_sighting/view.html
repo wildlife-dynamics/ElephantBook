@@ -29,7 +29,7 @@
         {% endif %}
     </li>
     <li>
-        {% include "../annotator/view.html" %}
+        {% include "../annotator/view.html" with hide_sidebar=True %}
     </li>
     <li>
         <form method="post">
@@ -37,10 +37,11 @@
             {{ edit_seek_form }}
             <hr>
             <button type="button" onclick="search(this.form)">Search Code in New Tab</button><br>
+            <a href="{% url 'rcos_match:matching' individual_sighting.pk 0 %}" target="_blank">RCOS Match</a><br>
             {{ set_identity_form }}
             <hr>
             Injuries:
-            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#injuryInfo" aria-expanded="false" aria-controls="collapseExample">
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#injuryInfo">
                 Instructions
             </button>
             <div class="collapse" id="injuryInfo">
@@ -53,7 +54,7 @@
             <div id="injury_formset">
                 {{ injury_formset.management_form }}
                 {% for injury_form in injury_formset %}
-                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#injury{{ forloop.counter0 }}" aria-expanded="false" aria-controls="collapseExample">
+                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#injury{{ forloop.counter0 }}">
                         Injury {{ forloop.counter0 }}
                     </button>
                     <div class="collapse" id="injury{{ forloop.counter0 }}">
@@ -62,13 +63,20 @@
                 {% endfor %}
                 <input type="button" value="+" id="add_injury">
                 <div id="empty_injury_form" style="display:none">
-                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#newinjury?" aria-expanded="false" aria-controls="collapseExample">
+                    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#newinjury?">
                         New Injury ?
                     </button>
                     <div class="collapse" id="newinjury?">
                         {{ injury_formset.empty_form }}
                     </div>
                 </div>
+            </div>
+            <hr>
+            <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#musthStatus">
+                Musth Status
+            </button>
+            <div class="collapse {% if musth_form.instance.id %}show{% endif %}" id="musthStatus">
+                {{ musth_form }}
             </div>
             <hr>
             {{ form }}
@@ -80,9 +88,9 @@
 
 <script>
     function search(form) {
-        let endpoint = "{% url 'seek search' %}?";
+        let endpoint = "{% url 'search' %}?individual_sighting={{ object.pk|urlencode }}&";
         // Hacky way to distinguish between SEEK and non-SEEK form elements
-        Array.prototype.forEach.call(Array.prototype.slice.call(form.elements, 1, 18), 
+        Array.prototype.forEach.call(Array.prototype.slice.call(form.elements, 1, 18),
                                      element => element.value ? endpoint += element.name+"="+element.value+"&" : 1);
         window.open(endpoint, "_blank");
     }

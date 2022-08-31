@@ -25,10 +25,9 @@
 </div>
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    Add images: {{ form.images }}
-    <input type="submit" value="Upload Selected Images" />
+    {% include 'filepond.html' %}
     <hr>
-    {% include "../annotator/view.html" with images=images boxes=boxes categories=categories annotate=True %}
+    {% include "../annotator/view.html" with images=images boxes=boxes categories=categories annotate=True hide_sidebar=True %}
     <input type="hidden" name="boxes" id="boxes" value="">
     <hr>
     Notes:

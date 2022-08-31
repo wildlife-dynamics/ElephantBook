@@ -1,5 +1,0 @@
-{% extends "list.html" %}
-
-{% block object_display %}
-<a href="{% url 'eb_anno:assignment view' object.pk %}"> {{ object }}</a> {{ object.annotation_target }}
-{% endblock %}

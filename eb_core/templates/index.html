@@ -11,7 +11,7 @@
     <b>Individual Sighting</b>
     <ul>
         <li><a href="{% url 'individual sighting list' %}">List</a></li>
-        <li><a href="{% url 'seek search' %}">SEEK Search</a></li>
+        <li><a href="{% url 'search' %}">SEEK Search</a></li>
         <li><a href="{% url 'individual sighting queue' %}">Queue</a></li>
         {% if perms.eb_core.expert %}
             <li><a href="{% url 'individual sighting expert queue' %}">Expert Queue</a></li>
@@ -26,7 +26,13 @@
         <li><a href="{% url 'individual combine' %}">Combine</a></li>
     </ul>
 
+    <b>Subgroup Sighting</b>
+    <ul>
+        <li><a href="{% url 'subgroup sighting list' %}">List</a></li>
+    </ul>
+
     {% if perms.eb_core.advanced %}
+    <span style="color: red;">
         <b>Admin</b>
         <ul>
             <li><a href="{% url 'ebuser create' %}">Create EBUser</a></li>
@@ -42,6 +48,7 @@
             <li><a href="{% url 'group sighting create' %}">Create</a></li>
             <li><a href="{% url 'group sighting list' %}">List</a></li>
         </ul>
+    </span>
     {% endif %}
 {% endif %}
 
@@ -49,9 +56,12 @@
     <b>Bulk Annotation</b>
     <ul>
     {% if perms.eb_anno.advanced %}
+    <span style="color: red;">
         <li><a href="{% url 'eb_anno:assignment list' %}">List</a></li>
-    {% endif %}
         <li><a href="{% url 'eb_anno:assignment queue' %}">Queue</a></li>
+    </span>
+    {% endif %}
+        <li><a href="{% url 'eb_anno:assignment get' %}">Get</a></li>
         <li><a href="{% url 'eb_anno:assignment completed list' %}">Completed List</a></li>
         <li><a href="{% url 'eb_anno:assignment needs review list' %}">Needs Review List</a></li>
     </ul>

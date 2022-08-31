@@ -3,6 +3,7 @@
 
 {% block content %}
 <a href="{% url 'eb_anno:assignment queue' %}">Assignment</a> {{ object.pk }}:
+<br> Date: {{ object.annotation_target.datetime }}
 <ul>
     <li>
         <form method="post">
