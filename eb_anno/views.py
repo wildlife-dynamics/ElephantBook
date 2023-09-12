@@ -152,7 +152,7 @@ class Assignment_View(PermissionRequiredMixin, generic.DetailView):
 
             for annotation_target_photo in self.object.annotation_target.annotation_target_photo_set.all():
                 for box in new_boxes.get(annotation_target_photo.image.name, []):
-                    if "bbox_id" in box:
+                    if "bbox_id" in box and box["bbox_id"] in old_boxes:
                         old_box = old_boxes[box["bbox_id"]]
                         old_box.x = box["bbox"][0]
                         old_box.y = box["bbox"][1]

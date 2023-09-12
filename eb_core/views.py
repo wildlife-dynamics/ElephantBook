@@ -23,7 +23,7 @@ from django_tables2 import SingleTableMixin, SingleTableView
 from PIL import Image
 
 from eb_ml.models import Scoring
-from eb_ml.tasks import associate_bboxes, detect
+from eb_ml.tasks import SCORE_WEIGHTS, associate_bboxes, detect
 
 from .forms import (
     Combine_Individual_Form,
@@ -74,11 +74,11 @@ from .utils import (
 
 class Index_View(LoginRequiredMixin, generic.TemplateView):
     template_name = "index.html"
-    extra_context = {"title": "Home"}
+    extra_context = {"title": "Home", "earthranger_enabled": bool(settings.ER_TOKEN)}
 
 
 class Group_Sighting_List(PermissionRequiredMixin, SingleTableView):
-    permission_required = "eb_core.advanced"
+    permission_required = "eb_core.main"
     model = Group_Sighting
     ordering = "-datetime"
     template_name = "table.html"
@@ -87,7 +87,7 @@ class Group_Sighting_List(PermissionRequiredMixin, SingleTableView):
 
 
 class Group_Sighting_Create(PermissionRequiredMixin, generic.CreateView):
-    permission_required = "eb_core.advanced"
+    permission_required = "eb_core.main"
     model = Group_Sighting
     fields = ("lat", "lon", "datetime", "notes")
     template_name = "form.html"
@@ -97,7 +97,7 @@ class Group_Sighting_Create(PermissionRequiredMixin, generic.CreateView):
 
 
 class Group_Sighting_View(PermissionRequiredMixin, generic.DetailView):
-    permission_required = "eb_core.advanced"
+    permission_required = "eb_core.main"
     model = Group_Sighting
     template_name = "group_sighting/view.html"
 
@@ -213,7 +213,7 @@ class Group_Sighting_View(PermissionRequiredMixin, generic.DetailView):
 
             for sighting_photo in self.object.sighting_photo_set.all():
                 for box in new_boxes.get(sighting_photo.image.name, []):
-                    if "bbox_id" in box:
+                    if "bbox_id" in box and box["bbox_id"] in old_boxes:
                         old_box = old_boxes[box["bbox_id"]]
                         old_box.x = box["bbox"][0]
                         old_box.y = box["bbox"][1]
@@ -237,11 +237,11 @@ class Group_Sighting_View(PermissionRequiredMixin, generic.DetailView):
                             w=box["bbox"][2],
                             h=box["bbox"][3],
                         ).save()
-
             for box in old_boxes.values():
                 individual_sighting = box.individual_sighting
                 box.delete()
-                if not individual_sighting.sighting_bounding_box_set.count():
+                individual_sighting.refresh_from_db()
+                if not individual_sighting.sighting_bounding_box_set.exists():
                     individual_sighting.delete()
 
             associate_bboxes.delay(list(self.object.sighting_photo_set.values_list("photo_ml", flat=True)))
@@ -812,34 +812,41 @@ class Search_View(PermissionRequiredMixin, SingleTableMixin, generic.TemplateVie
 
         individuals, seek_identities = get_individual_seek_identities(individuals)
 
-        if individuals.exists():
-            seek_scores = score_seek(
-                Seek_Identity_Form(self.request.GET).save(commit=False),
-                [np.array(seek_identity) for seek_identity in seek_identities],
-                binary="binary" in self.request.GET and self.request.GET["binary"] == "on",
+        if not individuals.exists():
+            return
+
+        seek_scores = score_seek(
+            Seek_Identity_Form(self.request.GET).save(commit=False),
+            [np.array(seek_identity) for seek_identity in seek_identities],
+            binary="binary" in self.request.GET and self.request.GET["binary"] == "on",
+        )
+
+        df = pd.DataFrame(
+            {
+                "individual": individuals,
+                "seek_code": [str(seek_identity) for seek_identity in seek_identities],
+                "score": seek_scores,
+                "seek_score": seek_scores,
+            },
+            index=individuals.values_list("pk", flat=True),
+        ).dropna()
+
+        try:
+            scoring_df = pd.DataFrame(
+                Scoring.objects.get(individual_sighting_id=self.request.GET["individual_sighting"]).data
             )
+            scoring_df.set_index(scoring_df.pop("individual").values, inplace=True)
+            df = df.drop(columns="score").join(scoring_df.drop(columns=["seek_code", "seek_score"]))
 
-            df = pd.DataFrame(
-                {
-                    "individual": individuals,
-                    "seek_code": [str(seek_identity) for seek_identity in seek_identities],
-                    "score": seek_scores,
-                    "seek_score": seek_scores,
-                },
-                index=individuals.values_list("pk", flat=True),
-            ).dropna()
+            scores = df[SCORE_WEIGHTS.keys()].values.astype(np.float32).T
+            df["score"] = np.ma.average(
+                np.ma.MaskedArray(scores, mask=np.isnan(scores)), weights=list(SCORE_WEIGHTS.values()), axis=0
+            )
+        except (KeyError, ObjectDoesNotExist):
+            pass
 
-            try:
-                scoring_df = pd.DataFrame(
-                    Scoring.objects.get(individual_sighting_id=self.request.GET["individual_sighting"]).data
-                )
-                scoring_df.set_index(scoring_df.pop("individual").values, inplace=True)
-                df = df[["individual", "seek_score"]].join(scoring_df.drop(columns="seek_score"))
-            except (KeyError, ObjectDoesNotExist):
-                pass
-
-            df = df.sort_values("score", ascending=False, ignore_index=True)
-            df["rank"] = df.index + 1
+        df = df.sort_values("score", ascending=False, ignore_index=True)
+        df["rank"] = df.index + 1
 
         return df.to_dict("records")
 

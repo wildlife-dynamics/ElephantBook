@@ -1,4 +1,4 @@
-FROM mambaorg/micromamba
+FROM mambaorg/micromamba:1.4-focal
 
 COPY environment.yml /tmp/environment.yml
 

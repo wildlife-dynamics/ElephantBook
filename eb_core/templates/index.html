@@ -2,12 +2,19 @@
 
 {% block content %}
 {% if perms.eb_core.main %}
+    {% if earthranger_enabled %}
     <b>EarthRanger Sighting</b>
     <ul>
         <li><a href="{% url 'earthranger sighting create' %}">Create</a></li>
         <li><a href="{% url 'earthranger sighting list' %}">List</a></li>
     </ul>
-
+    {% else %}
+    <b>Group Sighting</b>
+    <ul>
+        <li><a href="{% url 'group sighting create' %}">Create</a></li>
+        <li><a href="{% url 'group sighting list' %}">List</a></li>
+    </ul>
+    {% endif %}
     <b>Individual Sighting</b>
     <ul>
         <li><a href="{% url 'individual sighting list' %}">List</a></li>
@@ -43,11 +50,13 @@
             <li><a href="{% url 'stats' %}">View Data Statistics</a></li>
         </ul>
 
+        {% if earthranger_enabled %}
         <b>Group Sighting</b>
         <ul>
             <li><a href="{% url 'group sighting create' %}">Create</a></li>
             <li><a href="{% url 'group sighting list' %}">List</a></li>
         </ul>
+        {% endif %}
     </span>
     {% endif %}
 {% endif %}

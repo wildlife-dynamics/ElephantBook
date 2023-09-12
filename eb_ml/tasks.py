@@ -7,6 +7,7 @@ import torchvision
 from celery import shared_task
 from django.contrib.postgres.expressions import ArraySubquery
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.db.models import OuterRef
 from PIL import Image, ImageOps
 from torchvision import transforms
@@ -21,6 +22,12 @@ from eb_core.utils import get_individual_seek_identities, score_seek
 from ElephantBook.settings import BASE_DIR
 
 from .models import Bbox_ML, Coco_Bbox, Ear_Bbox, Embedding, Photo_ML, Scoring
+
+SCORE_WEIGHTS = {
+    "seek_score": 1,
+    "right_ear_emb_score": 0.25,
+    "left_ear_emb_score": 0.25,
+}
 
 
 class Detector:
@@ -326,14 +333,16 @@ def get_emb_scores(
         )
     ] = (
         0.5
-        + np.maximum.reduceat(
-            np.maximum.reduceat(
+        + np.add.reduceat(
+            np.add.reduceat(
                 (np.concatenate(out_embeddings) @ np.concatenate(database_embeddings).T),
                 np.r_[0, np.cumsum(out_counts[:-1])],
-            ),
+            )
+            / np.array(out_counts)[:, None],
             np.r_[0, np.cumsum(database_counts[:-1])],
             axis=1,
         )
+        / database_counts
         / 2
     )
 
@@ -348,6 +357,8 @@ def update_scorings(
 ):
     if not isinstance(out_individual_sightings[0], Individual_Sighting):
         out_individual_sightings = Individual_Sighting.objects.filter(pk__in=out_individual_sightings)
+
+    out_individual_sightings = out_individual_sightings.order_by("id")
 
     database_individuals, seek_identities = get_individual_seek_identities(
         individuals=database_individuals, individual_sightings=database_individual_sightings
@@ -377,7 +388,7 @@ def update_scorings(
 
     index = pd.Index(database_individuals.values_list("pk", flat=True), name="individual")
 
-    scores = np.array(
+    scores = np.array(  # Must be aligned with `SCORE_WEIGHTS``
         [
             seek_scores,
             right_ear_emb_scores,
@@ -385,35 +396,30 @@ def update_scorings(
         ]
     )
 
-    columns = np.array(
-        [
-            "seek_score",
-            "right_ear_emb_score",
-            "left_ear_emb_score",
-        ]
+    total_scores = np.ma.average(
+        np.ma.MaskedArray(scores, mask=np.isnan(scores)), weights=list(SCORE_WEIGHTS.values()), axis=0
     )
 
-    weights = np.array(
-        [
-            1,
-            0.25,
-            0.25,
-        ]
-    )
-
-    total_scores = np.ma.average(np.ma.MaskedArray(scores, mask=np.isnan(scores)), weights=weights, axis=0)
-
-    for i, out_individual_sighting in enumerate(out_individual_sightings):
-        df = pd.DataFrame(data=scores[:, i].T, columns=columns, index=index)
-        df["score"] = total_scores[i]
-        df["seek_code"] = seek_strings
-
-        Scoring.objects.update_or_create(
-            individual_sighting=out_individual_sighting,
-            defaults={
-                "data": df.sort_values("score", ascending=False).reset_index(level=0).fillna("NaN").to_dict("list")
-            },
+    with transaction.atomic():
+        Scoring.objects.bulk_create(
+            [
+                Scoring(individual_sighting=individual_sighting, data={})
+                for individual_sighting in out_individual_sightings.filter(scoring=None)
+            ]
         )
+
+        scorings = Scoring.objects.filter(individual_sighting__in=out_individual_sightings).order_by(
+            "individual_sighting_id"
+        )
+
+        for i, scoring in enumerate(scorings):
+            df = pd.DataFrame(data=scores[:, i].T, columns=SCORE_WEIGHTS.keys(), index=index)
+            df["score"] = total_scores[i]
+            df["seek_code"] = seek_strings
+
+            scoring.data = df.sort_values("score", ascending=False).reset_index(level=0).fillna("NaN").to_dict("list")
+
+        scorings.update()
 
 
 @shared_task

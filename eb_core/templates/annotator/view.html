@@ -114,7 +114,10 @@
     {% endif %}
 
     function annotateImage(imageIndex, full_resolution=false){
-        currentImageIndex = imageIndex;
+        if (!images_data[currentImageIndex]) {
+    	    return;
+	    }
+	currentImageIndex = imageIndex;
         let image_info = images_data[imageIndex];
         let existing_annotations = boxes[image_info.id];
 
@@ -274,9 +277,11 @@
 
         switch(e.keyCode){
             case LEFT_KEY:
+                saveCurrentAnnotations();
                 $("#previousImageButton").trigger("click");
                 break;
             case RIGHT_KEY:
+                saveCurrentAnnotations();
                 $("#nextImageButton").trigger("click");
                 break;
         }

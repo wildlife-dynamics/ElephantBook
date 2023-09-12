@@ -175,7 +175,6 @@ cython_debug/
 filepond-temp-uploads/
 filepond_uploads
 yolov5n.pt
-docker-compose.yml
 logs
 logs-backup
 db-backup
